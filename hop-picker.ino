@@ -56,20 +56,19 @@ boolean connectWifi() {
     return true;
 }
 
-struct tm *syncTime() {
+time_t syncTime() {
     configTime(UTC_OFFSET * 3600, 0, NTP_SERVERS);
 
     time_t this_second = 0;
     while(this_second < 86400 * 365) {
+        delay(100);
         time(&this_second);
-        delay(200);
     }
 
     char *dstAbbrev;
     time_t now = dstAdjusted.time(&dstAbbrev);
-    struct tm *timeinfo = localtime(&now);
 
-    return timeinfo;
+    return now;
 }
 
 #define RADIUS 600
@@ -84,7 +83,7 @@ float getAngle(int hour, int minute) {
     return (((hour * 60 + minute) / 720.0) + 0.5) * M_PI;
 }
 
-void updateTime(struct tm *timeinfo) {
+void drawTime(struct tm *timeinfo, bool blank) {
     // angle correspoding to current time
     float radCurrentTime = getAngle(timeinfo->tm_hour, timeinfo->tm_min);
 
@@ -95,6 +94,8 @@ void updateTime(struct tm *timeinfo) {
     int xoff = (RADIUS - xorig + EDGE_OFFSET) * cos(radCurrentTime);
     int yoff = (RADIUS - yorig + EDGE_OFFSET) * sin(radCurrentTime);
 
+    tft.setTextColor(blank ? HX8357_BLACK : HX8357_WHITE);
+
     // current time
     tft.fillTriangle(
         (xorig - xoff) + HAND_OFFSET * cos(radCurrentTime),
@@ -103,7 +104,7 @@ void updateTime(struct tm *timeinfo) {
         (yorig - yoff) + HAND_OFFSET * sin(radCurrentTime),
         (xorig - xoff) + RADIUS * cos(radCurrentTime),
         (yorig - yoff) + RADIUS * sin(radCurrentTime),
-        HX8357_RED);
+        blank ? HX8357_BLACK : HX8357_RED);
 
     // day + date
     char dayStr[7];
@@ -115,8 +116,8 @@ void updateTime(struct tm *timeinfo) {
     int xpos = (xorig - xoff) + (RADIUS - 4 * DATE_OFFSET) * cos(radCurrentTime) - w / 2;
     int ypos = (yorig - yoff) + (RADIUS - 4 * DATE_OFFSET) * sin(radCurrentTime) + h / 2;
     tft.getTextBounds(dayStr, xpos, ypos, &x1, &y1, &w, &h);
-    tft.fillRect(x1 - 10, y1 - 10, w + 20, h + 20, HX8357_BLACK);
-    tft.drawRoundRect(x1 - 10, y1 - 10, w + 20, h + 20, 10, HX8357_RED);
+    tft.fillRoundRect(x1 - 10, y1 - 10, w + 20, h + 20, 10, HX8357_BLACK);
+    tft.drawRoundRect(x1 - 10, y1 - 10, w + 20, h + 20, 10, blank ? HX8357_BLACK : HX8357_RED);
     tft.setCursor(xpos, ypos);
     tft.print(dayStr);
 
@@ -125,7 +126,7 @@ void updateTime(struct tm *timeinfo) {
         float radHour = getAngle((timeinfo->tm_hour + 24 + i) % 24, 0);
         tft.fillCircle((xorig - xoff) + RADIUS * cos(radHour),
             (yorig - yoff) + RADIUS * sin(radHour),
-            6, HX8357_WHITE);
+            6, blank ? HX8357_BLACK : HX8357_WHITE);
 
         // local timezone label
         char timeStr[3];
@@ -149,27 +150,42 @@ void updateTime(struct tm *timeinfo) {
             int r = j == 6 ? 4 : j == 3 || j == 9 ? 2 : 1;
             tft.fillCircle((xorig - xoff) + RADIUS * cos(radMin),
                 (yorig - yoff) + RADIUS * sin(radMin),
-                r, HX8357_WHITE);
+                r, blank ? HX8357_BLACK : HX8357_WHITE);
         }
     }
+}
+
+void updateTime(time_t time) {
+    time -= 60;
+    struct tm *timeinfo = localtime(&time);
+    //Serial.println(timeinfo->tm_min);
+    drawTime(timeinfo, true);
+
+    time += 60;
+    timeinfo = localtime(&time);
+    //Serial.println(timeinfo->tm_min);
+    drawTime(timeinfo, false);
 }
 
 
 void setup() {
     tft.begin(HX8357D);
     tft.setRotation(1);
+    tft.fillScreen(HX8357_BLACK);
+    //Serial.begin(115200);
 }
 
 void loop() {
-    tft.fillScreen(HX8357_BLACK);
-
     tft.setTextWrap(false);
     tft.setTextSize(1);
 
     boolean connected = connectWifi();
     if(connected) {
-        struct tm *timeinfo = syncTime();
-        updateTime(timeinfo);
+        updateTime(syncTime());
+
+        char *dstAbbrev;
+        time_t time = dstAdjusted.time(&dstAbbrev);
+        struct tm *timeinfo = localtime(&time);
         delay(1000 * (60 - timeinfo->tm_sec));
     } else {
         tft.setFont(&FreeSans18pt7b);
