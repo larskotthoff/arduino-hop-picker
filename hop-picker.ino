@@ -98,10 +98,10 @@ void drawTime(struct tm *timeinfo, bool blank) {
 
     // current time
     tft.fillTriangle(
-        (xorig - xoff) + HAND_OFFSET * cos(radCurrentTime),
-        (yorig - yoff) - HAND_OFFSET * sin(radCurrentTime),
-        (xorig - xoff) - HAND_OFFSET * cos(radCurrentTime),
-        (yorig - yoff) + HAND_OFFSET * sin(radCurrentTime),
+        (xorig - xoff) + HAND_OFFSET * cos(radCurrentTime + M_PI * 0.5),
+        (yorig - yoff) + HAND_OFFSET * sin(radCurrentTime + M_PI * 0.5),
+        (xorig - xoff) + HAND_OFFSET * cos(radCurrentTime - M_PI * 0.5),
+        (yorig - yoff) + HAND_OFFSET * sin(radCurrentTime - M_PI * 0.5),
         (xorig - xoff) + RADIUS * cos(radCurrentTime),
         (yorig - yoff) + RADIUS * sin(radCurrentTime),
         blank ? HX8357_BLACK : HX8357_RED);
