@@ -197,6 +197,7 @@ void loop() {
         tft.setTextColor(HX8357_WHITE);
         tft.setCursor(tft.width() / 2 - w / 2, tft.height() / 2 + h / 2);
         tft.print(err);
-        delay(60e6);
+        delay(1000 * 10);
+        tft.fillScreen(HX8357_BLACK);
     }
 }
