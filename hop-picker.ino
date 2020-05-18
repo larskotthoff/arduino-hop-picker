@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <ESP8266WiFi.h>
-#include <WiFiClientSecure.h>
 
 #include <Adafruit_GFX.h>
 #include <gfxfont.h>
@@ -45,9 +44,10 @@ boolean connectWifi() {
     if(WiFi.status() == WL_CONNECTED) return true;
 
     WiFi.begin(WIFI_SSID, WIFI_PASS);
+    WiFi.mode(WIFI_STA);
     int i = 0;
     while(WiFi.status() != WL_CONNECTED) {
-        delay(300);
+        delay(500);
         i++;
         if (i > 30) {
             return false;
