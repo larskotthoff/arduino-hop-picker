@@ -46,10 +46,10 @@ boolean connectWifi() {
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     WiFi.mode(WIFI_STA);
     int i = 0;
-    while(WiFi.status() != WL_CONNECTED) {
-        delay(500);
+    while(WiFi.waitForConnectResult() != WL_CONNECTED) {
+        delay(1000);
         i++;
-        if (i > 30) {
+        if (i > 5) {
             return false;
         }
     }
